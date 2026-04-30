@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estrutura de Painéis - UniSENAI Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .card { @apply bg-white p-5 rounded-xl shadow-sm border border-slate-200; }
+        .tab-active { @apply border-b-2 border-blue-600 text-blue-600 font-bold; }
+        .tab-inactive { @apply text-slate-500 hover:text-slate-700; }
+        .value-label { @apply text-slate-400 text-[10px] uppercase font-bold tracking-wider; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Header Principal com Seletor de Semestre -->
+    <header class="bg-white border-b border-slate-200 p-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-900 p-1.5 rounded">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </div>
+                <h1 class="text-lg font-bold text-slate-900">UniSENAI Digital <span class="font-normal text-slate-400">| Hub de Inteligência</span></h1>
+            </div>
+            
+            <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Período:</label>
+                    <select id="select-semestre" onchange="atualizarTudo()" class="bg-transparent text-blue-900 font-bold text-sm outline-none cursor-pointer">
+                        <option value="7" selected>2026/1 (Atual)</option>
+                        <option value="6">2025/2</option>
+                        <option value="5">2025/1</option>
+                        <option value="4">2024/2</option>
+                        <option value="3">2024/1</option>
+                        <option value="2">2023/2</option>
+                        <option value="1">2023/1</option>
+                        <option value="0">2022/2</option>
+                    </select>
+                </div>
+                <nav class="flex gap-4 md:gap-6 text-sm font-medium overflow-x-auto whitespace-nowrap pb-2 md:pb-0 w-full md:w-auto justify-center">
+                    <button onclick="switchTab('tab-dn')" id="btn-dn" class="pb-2 tab-active transition-all">Visão Global (DN)</button>
+                    <button onclick="switchTab('tab-dr')" id="btn-dr" class="pb-2 tab-inactive transition-all">Regional (DR)</button>
+                    <button onclick="switchTab('tab-ofertante')" id="btn-ofertante" class="pb-2 tab-inactive transition-all">Ofertante (IES)</button>
+                    <button onclick="switchTab('tab-polo')" id="btn-polo" class="pb-2 tab-inactive transition-all">Visão Polo</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6">
+
+        <!-- ========================================== -->
+        <!-- 0. VISÃO GLOBAL (DN)                       -->
+        <!-- ========================================== -->
+        <section id="tab-dn" class="space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-blue-900">Painel Estratégico Nacional</h2>
+                    <p class="text-slate-500 italic text-sm">Consolidação Semestral de Rede | Regra de Split: 80% IES / 15% Polo / 5% DN</p>
+                </div>
+                <div class="text-right w-full md:w-auto bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+                    <p class="value-label">Faturamento Semestral da Rede (Bruto)</p>
+                    <h3 id="dn-bruto" class="text-3xl font-black text-blue-900">R$ 0,00</h3>
+                </div>
+            </div>
+
+            <!-- Box Acumulado Histórico -->
+            <div class="card bg-slate-900 text-white border border-slate-800 py-4">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <p class="text-emerald-400 text-[10px] uppercase font-bold tracking-widest">Soma de todos os semestres até o período selecionado</p>
+                        <h3 class="font-bold text-lg">Total de Receita com o Projeto</h3>
+                    </div>
+                    <div class="flex items-center gap-6">
+                        <div class="text-right">
+                            <p class="text-slate-400 text-[10px] uppercase font-bold">Faturamento Bruto</p>
+                            <h3 id="dn-acumulado" class="text-3xl font-black text-emerald-400">R$ 0,00</h3>
+                        </div>
+                        <div class="text-right border-l border-slate-700 pl-6">
+                            <p class="text-slate-400 text-[10px] uppercase font-bold">Retido pelo DN (5%)</p>
+                            <h3 id="dn-acumulado-5" class="text-3xl font-black text-blue-400">R$ 0,00</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPIs Nacional -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="card bg-blue-900 text-white">
+                    <p class="text-blue-200 text-[10px] uppercase font-bold">Matrículas Totais</p>
+                    <h3 id="dn-alunos" class="text-3xl font-bold mt-1">0</h3>
+                    <p class="text-[10px] text-blue-300 mt-1">Nacional (Todos os Polos)</p>
+                </div>
+                <div class="card border-t-4 border-t-emerald-500">
+                    <p class="value-label">Receita Retida DN (5%)</p>
+                    <h3 id="dn-retida" class="text-2xl font-bold mt-1 text-emerald-600">R$ 0,00</h3>
+                    <p class="text-[10px] text-slate-400 mt-1">Taxa de administração nacional/semestre</p>
+                </div>
+                <div class="card border-t-4 border-t-indigo-500">
+                    <p class="value-label">Repasse Ofertantes (80%)</p>
+                    <h3 id="dn-repasse-of" class="text-2xl font-bold mt-1 text-indigo-600">R$ 0,00</h3>
+                    <p class="text-[10px] text-slate-400 mt-1">Para SC, BA e PR (Semestre)</p>
+                </div>
+                <div class="card border-t-4 border-t-blue-500">
+                    <p class="value-label">Repasse Polos (15%)</p>
+                    <h3 id="dn-repasse-polo" class="text-2xl font-bold mt-1 text-blue-600">R$ 0,00</h3>
+                    <p class="text-[10px] text-slate-400 mt-1">Líquido distribuído na rede (Semestre)</p>
+                </div>
+            </div>
+
+            <!-- Gráfico Evolutivo DN -->
+            <div class="card mt-2">
+                <h3 class="font-bold text-sm text-slate-500 uppercase mb-4 flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-blue-900"></span>
+                    Evolução Histórica do Faturamento Bruto (Rede Nacional)
+                </h3>
+                <div class="h-64"><canvas id="chart-dn"></canvas></div>
+            </div>
+
+            <!-- Módulo de Investimento Marketing DN -->
+            <div class="card bg-slate-900 text-white mt-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h3 class="font-bold text-lg flex items-center gap-2">
+                            <svg class="text-blue-400" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            Gestão de Aquisição de Alunos (CAC) - Investimento DN
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-1">Investimento Acumulado (2022-2025): <strong>R$ 3.200.000,00</strong> (R$ 800 mil/ano)</p>
+                    </div>
+                    <div class="text-left md:text-right">
+                        <p class="text-[10px] uppercase font-bold text-slate-400">Custo de Aquisição (CAC) Real</p>
+                        <h3 id="dn-cac-real" class="text-3xl font-black text-red-400">R$ 0,00</h3>
+                        <p class="text-[10px] text-slate-400 mt-1">Investimento / Matrículas ativas no semestre</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 1. PAINEL DO DR (DEPARTAMENTO REGIONAL)    -->
+        <!-- ========================================== -->
+        <section id="tab-dr" class="hidden space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-2xl font-bold text-blue-900">Visão Regional (DR)</h2>
+                    <p class="text-slate-500 text-sm">Consolidação de Receitas no Estado (Semestre): Captação Local (15%) + Oferta IES (80%)</p>
+                </div>
+                
+                <!-- SELETOR DE DR -->
+                <div class="w-full md:w-auto">
+                    <label class="text-xs font-bold text-slate-500 uppercase block mb-1">Selecione o Estado (DR):</label>
+                    <select id="select-dr" onchange="atualizarDadosDR()" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                        <!-- Preenchido via JS dinamicamente -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Box Acumulado Histórico DR -->
+            <div class="card bg-slate-900 text-white border border-slate-800 py-4">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <p class="text-emerald-400 text-[10px] uppercase font-bold tracking-widest">Soma de todos os semestres até o período selecionado</p>
+                        <h3 class="font-bold text-lg">Total de Receita com o Projeto (Retido Estado)</h3>
+                    </div>
+                    <h3 id="dr-acumulado" class="text-3xl font-black text-emerald-400">R$ 0,00</h3>
+                </div>
+            </div>
+
+            <!-- KPIs DR -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="card">
+                    <p class="value-label">Alunos nos Polos (Local)</p>
+                    <h3 id="dr-alunos" class="text-3xl font-bold text-blue-900">0</h3>
+                    <p class="text-[10px] text-slate-400 mt-1">Matrículas no território</p>
+                </div>
+                <div class="card">
+                    <p class="value-label">Repasse aos Polos (15%)</p>
+                    <h3 id="dr-repasse-polos" class="text-2xl font-bold text-blue-600">R$ 0,00</h3>
+                    <p class="text-[10px] text-slate-400 mt-1">Soma semestral da rede local</p>
+                </div>
+                <div class="card border-l-4 border-l-indigo-500">
+                    <p class="value-label">Receita IES Ofertante (80%)</p>
+                    <h3 id="dr-repasse-of" class="text-2xl font-bold text-indigo-700">R$ 0,00</h3>
+                    <p class="text-[10px] text-slate-400 mt-1">Nacional (Se DR for Ofertante)</p>
+                </div>
+                <div class="card bg-emerald-50 border-emerald-200">
+                    <p class="value-label text-emerald-700">Total Retido no Estado</p>
+                    <h3 id="dr-total" class="text-3xl font-black text-emerald-700">R$ 0,00</h3>
+                    <p class="text-[10px] text-emerald-600 mt-1 font-bold">15% Polos + 80% IES</p>
+                </div>
+            </div>
+
+            <!-- Gráfico Evolutivo DR -->
+            <div class="card mt-2 mb-2">
+                <h3 class="font-bold text-sm text-slate-500 uppercase mb-4 flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                    Evolução Histórica da Receita Semestral Total do Estado
+                </h3>
+                <div class="h-64"><canvas id="chart-dr"></canvas></div>
+            </div>
+
+            <!-- Tabela Consolidada de Polos do DR -->
+            <div class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold">Extrato Financeiro de Captação (Polos do Território)</h3>
+                    <button class="text-blue-600 text-sm font-semibold hover:underline hidden md:block">Baixar Relatório (.csv)</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-50 text-slate-500 text-left border-b border-slate-200">
+                            <tr>
+                                <th class="p-3">Município / Polo</th>
+                                <th class="p-3 text-center" title="Análise e Desenvolvimento de Sistemas">Alunos (ADS)</th>
+                                <th class="p-3 text-center" title="Segurança Cibernética">Alunos (Ciber)</th>
+                                <th class="p-3 text-center" title="Ciência de Dados">Alunos (Dados)</th>
+                                <th class="p-3 text-center" title="Gestão da Prod. Industrial">Alunos (GPI)</th>
+                                <th class="p-3 text-right">Fat. Bruto Polo (Semestre)</th>
+                                <th class="p-3 text-right text-blue-700 font-bold">Repasse Polo (15%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dr-tabela-body">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                        <tfoot class="bg-slate-900 text-white font-bold" id="dr-tabela-foot">
+                            <!-- Preenchido via JS -->
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 2. PAINEL DO OFERTANTE (IES)               -->
+        <!-- ========================================== -->
+        <section id="tab-ofertante" class="hidden space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-2xl font-bold text-blue-900">Visão IES Ofertante</h2>
+                    <p class="text-slate-500 text-sm">Receita Semestral retida de 80% sobre os cursos próprios (Nacional)</p>
+                </div>
+                
+                <!-- SELETOR DE OFERTANTE -->
+                <div class="w-full md:w-auto">
+                    <label class="text-xs font-bold text-slate-500 uppercase block mb-1">Selecione a IES Ofertante:</label>
+                    <select id="select-ofertante" onchange="atualizarDadosOfertante()" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                        <option value="sc">UniSENAI Santa Catarina (ADS / Seg. Ciber)</option>
+                        <option value="ba">SENAI CIMATEC Bahia (Dados e IA)</option>
+                        <option value="pr">UniSENAI Paraná (Gestão Prod. Industrial)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Box Acumulado Histórico Ofertante -->
+            <div class="card bg-slate-900 text-white border border-slate-800 py-4">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <p class="text-emerald-400 text-[10px] uppercase font-bold tracking-widest">Soma de todos os semestres até o período selecionado</p>
+                        <h3 class="font-bold text-lg">Total de Receita com o Projeto (IES 80%)</h3>
+                    </div>
+                    <h3 id="of-acumulado" class="text-3xl font-black text-emerald-400">R$ 0,00</h3>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Cards Dinâmicos Ofertante -->
+                <div class="card bg-indigo-50 border-indigo-100 col-span-1 flex flex-col justify-center">
+                    <p class="text-indigo-800 text-[10px] uppercase font-bold tracking-widest text-center">Seu Repasse Direto (80%)</p>
+                    <h3 id="of-repasse" class="text-4xl font-black text-indigo-700 text-center mt-2">R$ 0,00</h3>
+                    <p class="text-[10px] text-slate-500 text-center mt-3 bg-white p-2 rounded mx-4 border border-indigo-100">
+                        Exclusivo como provedor de conteúdo.
+                    </p>
+                </div>
+
+                <div class="col-span-1 md:col-span-2 grid grid-cols-2 gap-4">
+                    <div class="card">
+                        <p class="value-label">Matrículas Totais da sua Oferta</p>
+                        <h3 id="of-alunos" class="text-2xl font-bold mt-1">0</h3>
+                        <p id="of-alunos-detalhe" class="text-[10px] text-slate-400 mt-1">Alunos em toda a rede nacional</p>
+                    </div>
+                    <div class="card">
+                        <p class="value-label">Ticket Mensal (Base de Cálculo)</p>
+                        <h3 id="of-ticket" class="text-2xl font-bold mt-1">R$ 0,00</h3>
+                        <p class="text-[10px] text-slate-400 mt-1">x 6 meses = Repasse Semestral</p>
+                    </div>
+                    <div class="card col-span-2">
+                        <p class="value-label">Faturamento Semestral Bruto (Seus Cursos)</p>
+                        <h3 id="of-bruto" class="text-2xl font-bold mt-1 text-slate-700">R$ 0,00</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico Evolutivo Ofertante -->
+            <div class="card mt-2">
+                <h3 class="font-bold text-sm text-slate-500 uppercase mb-4 flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-indigo-600"></span>
+                    Evolução Histórica da Receita Semestral Retida (80%)
+                </h3>
+                <div class="h-64"><canvas id="chart-ofertante"></canvas></div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 3. PAINEL DO POLO                          -->
+        <!-- ========================================== -->
+        <section id="tab-polo" class="hidden space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-2xl font-bold text-blue-900">Dashboard Operacional do Polo</h2>
+                    <p class="text-slate-500 text-sm">Receita Semestral retida de 15% sobre captação local de alunos</p>
+                </div>
+                
+                <!-- SELETOR DE POLO -->
+                <div class="w-full md:w-auto">
+                    <label class="text-xs font-bold text-slate-500 uppercase block mb-1">Selecione o Polo:</label>
+                    <select id="select-polo" onchange="atualizarDadosPolo()" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                        <!-- Preenchido via JS dinamicamente -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Aviso Especial CIMATEC/UniSENAI -->
+            <div id="aviso-ofertante" class="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-sm hidden">
+                <strong>Nota Importante:</strong> Esta unidade atua como <strong>Ofertante de Conteúdo</strong> e os 15% calculados abaixo já compõem os 95% consolidados na Visão do Estado (DR). Para ver a receita nacional de 80% dos seus cursos, acesse a <button onclick="switchTab('tab-ofertante')" class="underline font-bold">Visão Ofertante</button>.
+            </div>
+
+            <!-- Box Acumulado Histórico Polo -->
+            <div class="card bg-slate-900 text-white border border-slate-800 py-4">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <p class="text-emerald-400 text-[10px] uppercase font-bold tracking-widest">Soma de todos os semestres até o período selecionado</p>
+                        <h3 class="font-bold text-lg">Total de Receita com o Projeto (Polo 15%)</h3>
+                    </div>
+                    <h3 id="pl-acumulado" class="text-3xl font-black text-emerald-400">R$ 0,00</h3>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="card">
+                    <p class="value-label">Alunos Captados no Polo</p>
+                    <h3 id="pl-alunos" class="text-3xl font-bold text-blue-900">0</h3>
+                    <p id="pl-detalhe-alunos" class="text-[10px] text-slate-500 mt-1">0 (ADS) | 0 (Ciber) | 0 (Dados/IA)</p>
+                </div>
+                <div class="card">
+                    <p class="value-label">Faturamento Bruto Gerado (Semestre)</p>
+                    <h3 id="pl-bruto" class="text-3xl font-bold text-slate-800">R$ 0,00</h3>
+                    <p class="text-[10px] text-slate-400 mt-1">Soma semestral das mensalidades locais</p>
+                </div>
+                <div class="card bg-blue-50 border-blue-200">
+                    <p class="value-label text-blue-600">Seu Repasse como Polo (15%)</p>
+                    <h3 id="pl-repasse" class="text-3xl font-black text-blue-600">R$ 0,00</h3>
+                    <p class="text-[10px] text-blue-500 font-bold mt-1">Aplicado sobre todas as matrículas locais (Semestre)</p>
+                </div>
+            </div>
+
+            <!-- Gráfico Evolutivo Polo -->
+            <div class="card mt-2">
+                <h3 class="font-bold text-sm text-slate-500 uppercase mb-4 flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+                    Evolução Histórica do Repasse Semestral Retido pelo Polo (15%)
+                </h3>
+                <div class="h-64"><canvas id="chart-polo"></canvas></div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- BASE DE DADOS SINCRONIZADA (Ref. 2026/1 com validações de DR e Separação de Cursos) --- //
+        
+        // Regras Financeiras Base
+        const TICKETS = { ads: 399.00, segcib: 399.00, dados: 875.95, gpi: 277.93 };
+        const INVESTIMENTO_TOTAL_DN = 3200000; // R$ 800.000 * 4 anos
+        const MESES = 6; // Ajuste para cálculo da Receita Semestral
+        
+        // Dados validados baseados nos arquivos mais recentes com a visão para 2026/1
+        const RAW_DATA = [
+            { uf: 'SC', nome: 'Florianópolis - Campus Florianópolis', ads: 131, segcib: 17, dados: 5, gpi: 0, isOfertante: false },
+            { uf: 'SC', nome: 'Florianópolis - UniSENAI SC', ads: 42, segcib: 8, dados: 0, gpi: 0, isOfertante: 'ads_segcib' },
+            { uf: 'SC', nome: 'Jaraguá do Sul', ads: 15, segcib: 2, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'SC', nome: 'Chapecó', ads: 6, segcib: 1, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'SC', nome: 'Joinville', ads: 23, segcib: 10, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'SC', nome: 'Palhoça', ads: 9, segcib: 3, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'SC', nome: 'São José', ads: 17, segcib: 3, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'SC', nome: 'Tubarão', ads: 12, segcib: 1, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'BA', nome: 'Salvador - CIMATEC', ads: 11, segcib: 10, dados: 88, gpi: 0, isOfertante: 'dados' },
+            { uf: 'BA', nome: 'Juazeiro', ads: 0, segcib: 0, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'RJ', nome: 'IST Automação e Simulação', ads: 11, segcib: 6, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'SP', nome: 'Ribeirão Preto - Octavio M. Ferraz', ads: 4, segcib: 1, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'SP', nome: 'Campinas - Roberto Mange', ads: 3, segcib: 0, dados: 4, gpi: 0, isOfertante: false },
+            { uf: 'SP', nome: 'Bauru - João Martins Coube', ads: 0, segcib: 0, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'GO', nome: 'Faculdade FATESG', ads: 3, segcib: 0, dados: 2, gpi: 0, isOfertante: false },
+            { uf: 'MG', nome: 'Contagem - Centro 4.0', ads: 2, segcib: 0, dados: 5, gpi: 0, isOfertante: false },
+            { uf: 'MG', nome: 'Pará de Minas - Dr. Celso Charuri', ads: 0, segcib: 1, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'MG', nome: 'Belo Horizonte - Horto', ads: 0, segcib: 0, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'PA', nome: 'Belém - CEDAM', ads: 4, segcib: 1, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'ES', nome: 'Vitória - Arivaldo Silveira Fontes', ads: 1, segcib: 0, dados: 2, gpi: 0, isOfertante: false },
+            { uf: 'MS', nome: 'Campo Grande - Fac. Construção', ads: 3, segcib: 1, dados: 2, gpi: 0, isOfertante: false },
+            { uf: 'DF', nome: 'Celso Charuri', ads: 1, segcib: 1, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'DF', nome: 'Taguatinga', ads: 1, segcib: 5, dados: 3, gpi: 0, isOfertante: false },
+            { uf: 'PR', nome: 'São José dos Pinhais', ads: 3, segcib: 0, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'PR', nome: 'Curitiba - Campus da Indústria', ads: 0, segcib: 0, dados: 1, gpi: 0, isOfertante: 'gpi' },
+            { uf: 'CE', nome: 'Fortaleza - Antônio Urbano de Almeida', ads: 1, segcib: 2, dados: 1, gpi: 0, isOfertante: false },
+            { uf: 'PB', nome: 'Faculdade da Paraíba', ads: 1, segcib: 1, dados: 0, gpi: 0, isOfertante: false },
+            { uf: 'RO', nome: 'Ariquemes', ads: 0, segcib: 0, dados: 1, gpi: 0, isOfertante: false },
+            { uf: 'RS', nome: 'Porto Alegre', ads: 0, segcib: 0, dados: 2, gpi: 0, isOfertante: false }
+        ];
+
+        // Agregação Nacional dos Ofertantes BASE (2026/1)
+        const totalADSBase = RAW_DATA.reduce((acc, curr) => acc + curr.ads, 0);
+        const totalSegCibBase = RAW_DATA.reduce((acc, curr) => acc + curr.segcib, 0);
+        const totalDadosBase = RAW_DATA.reduce((acc, curr) => acc + curr.dados, 0);
+        const totalGPIBase = RAW_DATA.reduce((acc, curr) => acc + curr.gpi, 0);
+
+        const DADOS_OFERTANTES_BASE = {
+            'sc': { cursos: 'ADS e Seg. Cibernética', uf: 'SC', alunos: totalADSBase + totalSegCibBase, alunos_ads: totalADSBase, alunos_segcib: totalSegCibBase, ticket: TICKETS.ads, bruto: ((totalADSBase * TICKETS.ads) + (totalSegCibBase * TICKETS.segcib)) * MESES },
+            'ba': { cursos: 'Ciência de Dados e IA', uf: 'BA', alunos: totalDadosBase, ticket: TICKETS.dados, bruto: (totalDadosBase * TICKETS.dados) * MESES },
+            'pr': { cursos: 'Gestão da Produção Industrial', uf: 'PR', alunos: totalGPIBase, ticket: TICKETS.gpi, bruto: (totalGPIBase * TICKETS.gpi) * MESES }
+        };
+
+        const DADOS_DR = {};
+        RAW_DATA.forEach(polo => {
+            if (!DADOS_DR[polo.uf]) {
+                DADOS_DR[polo.uf] = { nome: `Regional - ${polo.uf}`, polos: [] };
+            }
+            DADOS_DR[polo.uf].polos.push({ 
+                nome: polo.nome, a_ads: polo.ads, a_segcib: polo.segcib, a_dados: polo.dados, a_gpi: polo.gpi, ofertanteDe: polo.isOfertante 
+            });
+        });
+
+        const DADOS_POLOS = {};
+        RAW_DATA.forEach((polo, index) => {
+            const key = `polo_${index}`;
+            DADOS_POLOS[key] = { 
+                nome: `${polo.uf} | ${polo.nome}`, a_ads: polo.ads, a_segcib: polo.segcib, a_dados: polo.dados, a_gpi: polo.gpi, ofertanteDe: polo.isOfertante 
+            };
+        });
+
+        const formatBRL = (valor) => {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+        };
+
+        // --- SISTEMA DE GRÁFICOS E MULTIPLICADOR DE SEMESTRE --- //
+        const SEMESTRES = ['2022/2', '2023/1', '2023/2', '2024/1', '2024/2', '2025/1', '2025/2', '2026/1 (Atual)'];
+        // Curva que simula a evolução e peso proporcional até o status 1.0 (2026/1)
+        const CURVA_MTR = [0.05, 0.15, 0.20, 0.50, 0.35, 0.75, 0.85, 1.0]; 
+
+        let cInstDN = null, cInstDR = null, cInstOf = null, cInstPolo = null;
+
+        function renderChart(canvasId, oldChart, label, valueBase2026, colorCode) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            if (oldChart) oldChart.destroy();
+
+            const dataHistorica = CURVA_MTR.map(multiplicador => valueBase2026 > 0 ? valueBase2026 * multiplicador : 0);
+
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: SEMESTRES,
+                    datasets: [{
+                        label: label,
+                        data: dataHistorica,
+                        borderColor: colorCode,
+                        backgroundColor: colorCode + '20',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 2,
+                        pointBackgroundColor: colorCode,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (ctx) => formatBRL(ctx.raw) } }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { callback: (val) => 'R$ ' + (val/1000).toFixed(0) + 'k' } 
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- INICIALIZAÇÃO E ATUALIZAÇÃO --- //
+
+        function atualizarDN() {
+            const selectedIndex = parseInt(document.getElementById('select-semestre').value || 7);
+            const mult = CURVA_MTR[selectedIndex];
+            
+            // Fator acumulado para calcular desde o período 0 até o período selecionado
+            const somaCurva = CURVA_MTR.slice(0, selectedIndex + 1).reduce((a, b) => a + b, 0);
+
+            // Bases 2026/1
+            const totalAlunosGeralBase = totalADSBase + totalSegCibBase + totalDadosBase + totalGPIBase;
+            const brutoGeralBase = DADOS_OFERTANTES_BASE['sc'].bruto + DADOS_OFERTANTES_BASE['ba'].bruto + DADOS_OFERTANTES_BASE['pr'].bruto;
+            const repasseDNBase = brutoGeralBase * 0.05;
+            const repasseOfertantesBase = brutoGeralBase * 0.80;
+            const repassePolosBase = brutoGeralBase * 0.15;
+
+            // Valores Multiplicados (Semestre atual selecionado)
+            const totalAlunosAtual = Math.round(totalAlunosGeralBase * mult);
+            const cacReal = INVESTIMENTO_TOTAL_DN / Math.max(1, totalAlunosAtual);
+
+            document.getElementById('dn-alunos').innerText = totalAlunosAtual;
+            document.getElementById('dn-bruto').innerText = formatBRL(brutoGeralBase * mult);
+            document.getElementById('dn-retida').innerText = formatBRL(repasseDNBase * mult);
+            document.getElementById('dn-repasse-of').innerText = formatBRL(repasseOfertantesBase * mult);
+            document.getElementById('dn-repasse-polo').innerText = formatBRL(repassePolosBase * mult);
+            
+            // Box de Acumulado
+            document.getElementById('dn-acumulado').innerText = formatBRL(brutoGeralBase * somaCurva);
+            document.getElementById('dn-acumulado-5').innerText = formatBRL((brutoGeralBase * somaCurva) * 0.05);
+
+            document.getElementById('dn-cac-real').innerText = formatBRL(cacReal);
+
+            // O gráfico sempre precisa da base 1.0 (2026/1) para plotar a curva histórica toda
+            cInstDN = renderChart('chart-dn', cInstDN, 'Faturamento Semestral (Rede)', brutoGeralBase, '#1e3a8a');
+        }
+
+        function atualizarDadosDR() {
+            const drSelecionado = document.getElementById('select-dr').value;
+            const dados = DADOS_DR[drSelecionado];
+            
+            const selectedIndex = parseInt(document.getElementById('select-semestre').value || 7);
+            const mult = CURVA_MTR[selectedIndex];
+            const somaCurva = CURVA_MTR.slice(0, selectedIndex + 1).reduce((a, b) => a + b, 0);
+            
+            let totalAlunosDR = 0;
+            let totalBrutoDR = 0;
+            let totalRepassePolosDR = 0;
+            let totalRepassePolosBase = 0;
+            let htmlLinhas = '';
+
+            dados.polos.forEach(polo => {
+                const totalPoloAlunosBase = polo.a_ads + polo.a_segcib + polo.a_dados + polo.a_gpi;
+                const faturamentoPoloBase = ((polo.a_ads * TICKETS.ads) + (polo.a_segcib * TICKETS.segcib) + (polo.a_dados * TICKETS.dados) + (polo.a_gpi * TICKETS.gpi)) * MESES;
+                const repassePoloBase = faturamentoPoloBase * 0.15;
+
+                totalAlunosDR += Math.round(totalPoloAlunosBase * mult);
+                totalBrutoDR += (faturamentoPoloBase * mult);
+                totalRepassePolosDR += (repassePoloBase * mult);
+                totalRepassePolosBase += repassePoloBase;
+
+                htmlLinhas += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+                        <td class="p-3 font-medium">${polo.nome}</td>
+                        <td class="p-3 text-center">${Math.round(polo.a_ads * mult)}</td>
+                        <td class="p-3 text-center">${Math.round(polo.a_segcib * mult)}</td>
+                        <td class="p-3 text-center">${Math.round(polo.a_dados * mult)}</td>
+                        <td class="p-3 text-center">${Math.round(polo.a_gpi * mult)}</td>
+                        <td class="p-3 text-right text-slate-600">${formatBRL(faturamentoPoloBase * mult)}</td>
+                        <td class="p-3 text-right font-bold text-blue-700">${formatBRL(repassePoloBase * mult)}</td>
+                    </tr>
+                `;
+            });
+
+            // Agregação de Ofertante no DR: Se o DR possui uma IES Ofertante, ele consolida os 80% Nacionais no estado
+            let repasseOfertanteDRBase = 0;
+            if (drSelecionado === 'SC') repasseOfertanteDRBase = DADOS_OFERTANTES_BASE['sc'].bruto * 0.80;
+            else if (drSelecionado === 'BA') repasseOfertanteDRBase = DADOS_OFERTANTES_BASE['ba'].bruto * 0.80;
+            else if (drSelecionado === 'PR') repasseOfertanteDRBase = DADOS_OFERTANTES_BASE['pr'].bruto * 0.80;
+
+            const repasseTotalEstadoBase = totalRepassePolosBase + repasseOfertanteDRBase;
+
+            document.getElementById('dr-alunos').innerText = totalAlunosDR;
+            document.getElementById('dr-repasse-polos').innerText = formatBRL(totalRepassePolosDR);
+            document.getElementById('dr-repasse-of').innerText = formatBRL(repasseOfertanteDRBase * mult);
+            document.getElementById('dr-total').innerText = formatBRL(repasseTotalEstadoBase * mult);
+
+            // Box Acumulado
+            document.getElementById('dr-acumulado').innerText = formatBRL(repasseTotalEstadoBase * somaCurva);
+
+            document.getElementById('dr-tabela-body').innerHTML = htmlLinhas;
+            document.getElementById('dr-tabela-foot').innerHTML = `
+                <tr>
+                    <td class="p-3">TOTAL ESTADO (${drSelecionado.toUpperCase()})</td>
+                    <td colspan="4" class="p-3 text-center">${totalAlunosDR} alunos locais</td>
+                    <td class="p-3 text-right">${formatBRL(totalBrutoDR)}</td>
+                    <td class="p-3 text-right text-blue-700 font-black">${formatBRL(totalRepassePolosDR)}</td>
+                </tr>
+            `;
+
+            cInstDR = renderChart('chart-dr', cInstDR, 'Receita Semestral Total do Estado', repasseTotalEstadoBase, '#10b981');
+        }
+
+        function atualizarDadosOfertante() {
+            const ofSelecionado = document.getElementById('select-ofertante').value;
+            const dadosBase = DADOS_OFERTANTES_BASE[ofSelecionado];
+            
+            const selectedIndex = parseInt(document.getElementById('select-semestre').value || 7);
+            const mult = CURVA_MTR[selectedIndex];
+            const somaCurva = CURVA_MTR.slice(0, selectedIndex + 1).reduce((a, b) => a + b, 0);
+            
+            const repasse80Base = dadosBase.bruto * 0.80;
+
+            document.getElementById('of-alunos').innerText = Math.round(dadosBase.alunos * mult);
+            
+            if(ofSelecionado === 'sc') {
+                document.getElementById('of-alunos-detalhe').innerText = `${Math.round(dadosBase.alunos_ads * mult)} (ADS) | ${Math.round(dadosBase.alunos_segcib * mult)} (Ciber) na rede nacional`;
+            } else {
+                document.getElementById('of-alunos-detalhe').innerText = `Alunos em toda a rede nacional`;
+            }
+            
+            document.getElementById('of-ticket').innerText = formatBRL(dadosBase.ticket);
+            document.getElementById('of-bruto').innerText = formatBRL(dadosBase.bruto * mult);
+            document.getElementById('of-repasse').innerText = formatBRL(repasse80Base * mult);
+
+            // Box Acumulado
+            document.getElementById('of-acumulado').innerText = formatBRL(repasse80Base * somaCurva);
+
+            cInstOf = renderChart('chart-ofertante', cInstOf, 'Repasse IES Ofertante (80%)', repasse80Base, '#4f46e5');
+        }
+
+        function atualizarDadosPolo() {
+            const poloSelecionado = document.getElementById('select-polo').value;
+            const dados = DADOS_POLOS[poloSelecionado];
+            
+            const selectedIndex = parseInt(document.getElementById('select-semestre').value || 7);
+            const mult = CURVA_MTR[selectedIndex];
+            const somaCurva = CURVA_MTR.slice(0, selectedIndex + 1).reduce((a, b) => a + b, 0);
+            
+            const aviso = document.getElementById('aviso-ofertante');
+            if(dados.ofertanteDe) {
+                aviso.classList.remove('hidden');
+            } else {
+                aviso.classList.add('hidden');
+            }
+
+            const totalAlunosBase = dados.a_ads + dados.a_segcib + dados.a_dados + dados.a_gpi;
+            const faturamentoBrutoBase = ((dados.a_ads * TICKETS.ads) + (dados.a_segcib * TICKETS.segcib) + (dados.a_dados * TICKETS.dados) + (dados.a_gpi * TICKETS.gpi)) * MESES;
+            
+            let repasse15Base = 0;
+            if (dados.ofertanteDe !== 'ads_segcib') repasse15Base += ((dados.a_ads * TICKETS.ads) + (dados.a_segcib * TICKETS.segcib)) * 0.15 * MESES;
+            if (dados.ofertanteDe !== 'dados') repasse15Base += (dados.a_dados * TICKETS.dados) * 0.15 * MESES;
+            if (dados.ofertanteDe !== 'gpi') repasse15Base += (dados.a_gpi * TICKETS.gpi) * 0.15 * MESES;
+
+            document.getElementById('pl-alunos').innerText = Math.round(totalAlunosBase * mult);
+            document.getElementById('pl-detalhe-alunos').innerText = `${Math.round(dados.a_ads * mult)} (ADS) | ${Math.round(dados.a_segcib * mult)} (Ciber) | ${Math.round(dados.a_dados * mult)} (Dados)`;
+            document.getElementById('pl-bruto').innerText = formatBRL(faturamentoBrutoBase * mult);
+            document.getElementById('pl-repasse').innerText = formatBRL(repasse15Base * mult);
+
+            // Box Acumulado
+            document.getElementById('pl-acumulado').innerText = formatBRL(repasse15Base * somaCurva);
+
+            cInstPolo = renderChart('chart-polo', cInstPolo, 'Repasse Semestral ao Polo (15%)', repasse15Base, '#2563eb');
+        }
+
+        function atualizarTudo() {
+            atualizarDN();
+            atualizarDadosDR();
+            atualizarDadosOfertante();
+            atualizarDadosPolo();
+        }
+
+        function inicializarSistema() {
+            const selectDR = document.getElementById('select-dr');
+            selectDR.innerHTML = '';
+            Object.keys(DADOS_DR).sort().forEach(uf => {
+                const opt = document.createElement('option');
+                opt.value = uf;
+                opt.innerText = `SENAI ${uf}`;
+                selectDR.appendChild(opt);
+            });
+
+            const selectPolo = document.getElementById('select-polo');
+            selectPolo.innerHTML = '';
+            Object.keys(DADOS_POLOS).forEach(key => {
+                const polo = DADOS_POLOS[key];
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.innerText = polo.nome;
+                selectPolo.appendChild(opt);
+            });
+
+            atualizarTudo();
+        }
+
+        function switchTab(tabId) {
+            const sections = ['tab-dn', 'tab-dr', 'tab-ofertante', 'tab-polo'];
+            sections.forEach(s => document.getElementById(s).classList.add('hidden'));
+            
+            const buttons = ['btn-dn', 'btn-dr', 'btn-ofertante', 'btn-polo'];
+            buttons.forEach(b => document.getElementById(b).className = 'pb-2 tab-inactive transition-all');
+
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId.split('-')[1]).className = 'pb-2 tab-active transition-all';
+        }
+
+        window.onload = () => inicializarSistema();
+    </script>
+</body>
+</html>
